@@ -1,0 +1,81 @@
+// @version=5
+// Script Name: Swing Highs/Lows Levels
+// Author: Ivan Torres
+// Copyright: © 2023 Ivan Torres. All Rights Reserved.
+// License: MIT License
+// Description: This indicator displays swing highs and lows for the previous day, week, and month with customizable settings for a personalized experience.
+// Contact: @IvanTorresEdge
+indicator("Swing Highs/Lows", shorttitle="Swing Highs/Lows", overlay=true)
+
+bool showMonth = input(false, "Show Monthly Timeframe")
+color color_month = input(#ab47bc, "Monthly Line Color")
+int opacity_month = input.int(30, "Monthly Line Opacity", minval=0, maxval=100, step=1)
+int width_month = input.int(2, "Monthly Line Width", minval=1, maxval=10)
+
+bool showWeek = input(true, "Show Weekly Timeframe")
+color color_week = input(#f57f17, "Weekly Line Color")
+int opacity_week = input.int(30, "Weekly Line Opacity", minval=0, maxval=100, step=1)
+int width_week = input.int(2, "Weekly Line Width", minval=1, maxval=10)
+
+bool showDay = input(true, "Show Daily Timeframe")
+color color_day = input(#00a6ff, "Daily Line Color")
+int opacity_day = input.int(30, "Daily Line Opacity", minval=0, maxval=100, step=1)
+int width_day = input.int(2, "Daily Line Width", minval=1, maxval=10)
+
+bool showLabels = input(true, "Show Labels")
+
+createLabel(price, label, color) =>
+    if showLabels and barstate.islast
+        label.new(bar_index + 5, price, text=label, color=color.new(#000000, 100), textcolor = color, style=label.style_label_center)
+
+var float highToUse = na
+var float closeToUse = na
+var float lowToUse = na
+
+if barstate.isrealtime
+    highToUse := high[1]
+    closeToUse := close[1]
+    lowToUse := low[1]
+else
+    highToUse := high[0]
+    closeToUse := close[0]
+    lowToUse := low[0]
+
+month_high = request.security(syminfo.tickerid, "M", highToUse)
+month_close = request.security(syminfo.tickerid, "M", closeToUse)
+month_low = request.security(syminfo.tickerid, "M", lowToUse)
+
+week_high = request.security(syminfo.tickerid, "W", highToUse)
+week_close = request.security(syminfo.tickerid, "W", closeToUse)
+week_low = request.security(syminfo.tickerid, "W", lowToUse)
+
+day_high = request.security(syminfo.tickerid, "D", highToUse)
+day_close = request.security(syminfo.tickerid, "D", closeToUse)
+day_low = request.security(syminfo.tickerid, "D", lowToUse)
+
+plot(showMonth ? month_high : na, "Previous Month High", color=color.new(color_month, opacity_month), style=plot.style_line, linewidth=width_month)
+plot(showMonth ? month_close : na, "Previous Month Close", color=color.new(color_month, opacity_month - 10), style=plot.style_line, linewidth=width_month - 1)
+plot(showMonth ? month_low : na, "Previous Month Low", color=color.new(color_month, opacity_month), style=plot.style_line, linewidth=width_month)
+
+if showMonth
+    createLabel(month_high, "PMH", color.new(color_month, opacity_month))
+    createLabel(month_close, "PMC", color.new(color_month, opacity_month))
+    createLabel(month_low, "PML", color.new(color_month, opacity_month))
+
+plot(showWeek ? week_high : na, "Previous Week High", color=color.new(color_week, opacity_week), style=plot.style_line, linewidth=width_week)
+plot(showWeek ? week_close : na, "Previous Week Close", color=color.new(color_week, opacity_week - 10), style=plot.style_line, linewidth=width_week - 1)
+plot(showWeek ? week_low : na, "Previous Week Low", color=color.new(color_week, opacity_week), style=plot.style_line, linewidth=width_week)
+
+if showWeek
+    createLabel(week_high, "PWH", color.new(color_week, opacity_week))
+    createLabel(week_close, "PWC", color.new(color_week, opacity_week))
+    createLabel(week_low, "PWL", color.new(color_week, opacity_week))
+
+plot(showDay ? day_high : na, "Previous Day High", color=color.new(color_day, opacity_day), style=plot.style_line, linewidth=width_day)
+plot(showDay ? day_close : na, "Previous Day Close", color=color.new(color_day, opacity_day - 10), style=plot.style_line, linewidth=width_day - 1)
+plot(showDay ? day_low : na, "Previous Day Low", color=color.new(color_day, opacity_day), style=plot.style_line, linewidth=width_day)
+
+if showDay
+    createLabel(day_high, "PDH", color.new(color_day, opacity_day))
+    createLabel(day_close, "PDC", color.new(color_day, opacity_day))
+    createLabel(day_low, "PDL", color.new(color_day, opacity_day))

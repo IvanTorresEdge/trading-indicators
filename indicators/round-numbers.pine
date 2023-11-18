@@ -1,0 +1,61 @@
+// Script Name: Round Numbers and Quarter Levels (Dynamic)
+// Author: Ivan Torres
+// Copyright: © 2023 Ivan Torres. All Rights Reserved.
+// License: MIT License
+// Description: This indicator displays round and quarter levels for the current symbol.
+// Contact: @IvanTorresEdge
+indicator("Round and Quarter Levels (Dynamic)", shorttitle="Round and Quarter Levels", overlay=true)
+
+var float levelTickSize = 250
+
+var group00 = "Round 00 Numbers"
+var color lineColor00 = input(title="Line color", defval=color.new(color.white, 50), group=group00)
+var string lineStyle00 = input.string(title="Line style", defval=line.style_solid, options=[line.style_solid, line.style_dotted, line.style_dashed], group=group00)
+var int lineWidth00 = input.int(title="Line width", defval=1, minval=1, maxval=4, group=group00)
+
+var group50 = "Round 50 Numbers"
+var color lineColor50 = input(title="Line color", defval=color.new(color.white, 50), group=group50)
+var string lineStyle50 = input.string(title="Line style", defval=line.style_dashed, options=[line.style_solid, line.style_dotted, line.style_dashed], group=group50)
+var int lineWidth50 = input.int(title="Line width", defval=1, minval=1, maxval=4, group=group50)
+
+var group25 = "Quarter Numbers"
+var color lineColor25 = input(title="Line color", defval=color.new(color.white, 50), group=group25)
+var string lineStyle25 = input.string(title="Line style", defval=line.style_dotted, options=[line.style_solid, line.style_dotted, line.style_dashed], group=group25)
+var int lineWidth25 = input.int(title="Line width", defval=1, minval=1, maxval=4, group=group25)
+
+var float highPrice = na
+var float lowPrice = na
+var step = levelTickSize * syminfo.mintick
+var int numLines = na
+
+roundToLevel(price) =>
+    levelSize = levelTickSize * syminfo.mintick
+    roundedPrice = math.round(price / levelSize) * levelSize
+    roundedPrice
+
+if syminfo.type == "forex" or syminfo.type == "cfd"
+    if time == chart.left_visible_bar_time
+        highPrice := high
+        lowPrice := low
+
+    if time >= chart.left_visible_bar_time and time <= chart.right_visible_bar_time
+        highPrice := math.max(highPrice, high)
+        lowPrice := math.min(lowPrice, low)
+
+    adjustedHigh = roundToLevel(highPrice)
+    adjustedLow = roundToLevel(lowPrice)
+
+    if not na(adjustedHigh) and not na(adjustedLow)
+        numLines := math.ceil((adjustedHigh - adjustedLow) / step) + 1
+
+    if barstate.islast and not na(numLines)
+        for i = 0 to numLines - 1
+            level = adjustedLow + i * step
+            if level <= adjustedHigh + step
+                normalizedLevel = math.round(level / (levelTickSize * syminfo.mintick))
+
+                lineColor = normalizedLevel % 4 == 0 ? lineColor00 : normalizedLevel % 2 == 0 ? lineColor50 : lineColor25
+                lineStyle = normalizedLevel % 4 == 0 ? lineStyle00 : normalizedLevel % 2 == 0 ? lineStyle50 : lineStyle25
+                lineWidth = normalizedLevel % 4 == 0 ? lineWidth00 : normalizedLevel % 2 == 0 ? lineWidth50 : lineWidth25
+                
+                line.new(bar_index, level, bar_index - 1, level, color=lineColor, xloc=xloc.bar_index, extend=extend.both, width=lineWidth, style=lineStyle)

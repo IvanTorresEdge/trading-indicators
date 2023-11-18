@@ -1,0 +1,143 @@
+// @version=5
+// Script Name: Candle Timer
+// Author: Ivan Torres
+// Copyright: © 2023 Ivan Torres. All Rights Reserved.
+// License: MIT License
+// Description: This indicator displays a table with the time remaining for the next candle to close.
+// Contact: @IvanTorresEdge
+indicator('Syzygy', shorttitle='Syzygy', overlay=true, precision=2, max_lines_count = 500, max_boxes_count = 500)
+
+// **************************************************************
+// Stop if timeframe is above 1 hour
+// **************************************************************
+
+var bool isValidTF = (timeframe.isminutes and timeframe.multiplier <= 60) or (timeframe.isseconds and timeframe.multiplier <= 60)
+if isValidTF == false
+    runtime.error("Please use a chart with timeframe up to 1 hour.")
+
+// **************************************************************
+// LABELS
+// **************************************************************
+
+var string group = "Display Countdown"
+var string tableGroup = "Countdown Table"
+
+var string title5 = "5 min"
+var string title15 = "15 min"
+var string title1h = "1 hour"
+var string title4h = "4 hour"
+
+var string marketClosed = "Market\nClosed"
+
+// **************************************************************
+// INPUTS
+// **************************************************************
+
+// Color settings
+var color colorUp = input(defval=color.rgb(11, 154, 129, 0), title='Up Color', group = "Colors")
+var color colorDown = input(defval=color.rgb(243, 54, 69, 0), title='Down Color', group = "Colors")
+
+// Display settings
+var bool display5 = input.bool(true, title = title5, group = group, inline = "1")
+var bool display15 = input.bool(true, title = title15, group = group, inline = "2")
+var bool display1h = input.bool(true, title = title1h, group = group, inline = "3")
+var bool display4h = input.bool(true, title = title4h, group = group, inline = "4")
+
+// Table settings
+var string tablesize = input.string('large', ' Table Size', inline='1', options=['small', 'normal', 'large','huge'], group = tableGroup)
+var string tableYpos = input.string('top', 'Position', inline='2', options=['top', 'middle', 'bottom'], group = tableGroup)
+var string tableXpos = input.string('right', '', inline='2', options=['left', 'center', 'right'], group = tableGroup)
+
+// **************************************************************
+// FUNCTIONS
+// **************************************************************
+
+addZero(_input) =>
+    len = str.length(str.tostring(_input))
+    len == 1 ? "0" + str.tostring(_input) : str.tostring(_input)
+
+getCountdown(_input) =>
+    place1 = math.floor(_input)
+    place2 = (_input - math.floor(_input)) * 100
+    addZero(place1) + ":" + addZero(place2)
+
+getHoursCountdown(_mins, _secs) =>
+    hours = math.floor(_mins / 60)
+    remainingMins = _mins - (hours * 60)    
+    addZero(hours) + ":" + addZero(remainingMins) + ":" + addZero(_secs)
+
+getTitleSize(_input) =>
+    tablesize == "huge" ? "large" :
+     tablesize == "large" ? "normal" :
+     tablesize == "normal" ? "small" :
+     tablesize == "small" ? "tiny" : na
+
+getCandleDirection(_tf) =>
+    _close = request.security(syminfo.tickerid, _tf, close)
+    _open = request.security(syminfo.tickerid, _tf, open)
+    _close > _open ? colorUp : colorDown
+
+// **************************************************************
+// CALCULATIONS
+// **************************************************************
+
+// Timeframe Multipliers
+currentTFMultiplier = timeframe.multiplier
+fourHourTFMultiplier = 240 / currentTFMultiplier
+oneHourTFMultiplier = 60 / currentTFMultiplier
+fifteenMinTFMultiplier = 15 / currentTFMultiplier
+fiveMinTFMultiplier = 5 / currentTFMultiplier
+
+// Countdown Calculations
+currentSecond = math.floor((timenow - time) / 1000)
+secondsPerBar = (currentTFMultiplier * 60)
+remainingSecondsForBar = secondsPerBar - currentSecond
+remainingMinutesForBar = math.floor(remainingSecondsForBar / 60)
+remainingSeconds = remainingSecondsForBar - (remainingMinutesForBar * 60)
+
+// Hour Countdowns
+barsUntilNextHour = (60 / currentTFMultiplier) - ta.barssince(timeframe.change("60"))
+barsUntilNextFourHours = (240 / currentTFMultiplier) - ta.barssince(timeframe.change("240"))
+
+// Calculating time until next hour, 15-min, 5-min and 4-hour bar
+timeUntilNextHour = (remainingMinutesForBar + (remainingSeconds * .01)) + ((barsUntilNextHour * currentTFMultiplier) - currentTFMultiplier)
+timeUntilNextFifteenMinutes = timeUntilNextHour - math.floor(timeUntilNextHour / 15) * 15
+timeUntilNextFiveMinutes = timeUntilNextHour - math.floor(timeUntilNextHour / 5) * 5
+timeUntilNextFourHours = (remainingMinutesForBar + (remainingSeconds * .01)) + ((barsUntilNextFourHours * currentTFMultiplier) - currentTFMultiplier)
+remainingMinutesForFourHours = math.floor(timeUntilNextFourHours)
+remainingSecondsForFourHours = (timeUntilNextFourHours - math.floor(timeUntilNextFourHours)) * 100
+
+// **************************************************************
+// PLOT
+// **************************************************************
+
+var table countdownTable = table.new(tableYpos + '_' + tableXpos, 4, 6)
+
+atr5 = math.round(request.security(syminfo.tickerid, "5", ta.atr(14) / syminfo.mintick))
+atr15 = math.round(request.security(syminfo.tickerid, "15", ta.atr(14) / syminfo.mintick))
+atr1h = math.round(request.security(syminfo.tickerid, "60", ta.atr(14) / syminfo.mintick))
+atr4h = math.round(request.security(syminfo.tickerid, "240", ta.atr(14) / syminfo.mintick))
+
+if barstate.islast and display5
+    color5 = getCandleDirection("5")
+    table.cell(countdownTable, 0, 0, text = title5, text_color = color5, text_size = getTitleSize(tablesize))
+    table.cell(countdownTable, 0, 1, text = session.islastbar ? marketClosed : getCountdown(timeUntilNextFiveMinutes), text_color = color5, text_size = tablesize)
+    table.cell(countdownTable, 0, 2, text = str.tostring(atr5), text_color = color5, text_size = getTitleSize(tablesize))
+
+if barstate.islast and display15
+    color15 = getCandleDirection("15")
+    table.cell(countdownTable, 1, 0, text = title15, text_color = color15, text_size = getTitleSize(tablesize))
+    table.cell(countdownTable, 1, 1, text = session.islastbar ? marketClosed : getCountdown(timeUntilNextFifteenMinutes), text_color = color15, text_size = tablesize)
+    table.cell(countdownTable, 1, 2, text = str.tostring(atr15), text_color = color15, text_size = getTitleSize(tablesize))
+
+if barstate.islast and display1h
+    color1h = getCandleDirection("60")
+    table.cell(countdownTable, 2, 0, text = title1h, text_color = color1h, text_size = getTitleSize(tablesize))
+    table.cell(countdownTable, 2, 1, text = session.islastbar ? marketClosed : getCountdown(timeUntilNextHour), text_color = color1h, text_size = tablesize)
+    table.cell(countdownTable, 2, 2, text = str.tostring(atr1h), text_color = color1h, text_size = getTitleSize(tablesize))
+
+if barstate.islast and display4h
+    color4h = getCandleDirection("240")
+    table.cell(countdownTable, 3, 0, text = title4h, text_color = color4h, text_size = getTitleSize(tablesize))
+    table.cell(countdownTable, 3, 1, text = session.islastbar ? marketClosed : getHoursCountdown(remainingMinutesForFourHours, remainingSecondsForFourHours), text_color = color4h, text_size = tablesize)
+    table.cell(countdownTable, 3, 2, text = str.tostring(atr4h), text_color = color4h, text_size = getTitleSize(tablesize))

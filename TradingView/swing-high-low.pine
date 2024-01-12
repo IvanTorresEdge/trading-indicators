@@ -9,21 +9,26 @@ indicator("Swing Highs/Lows", shorttitle="Swing Highs/Lows", overlay=true)
 
 // Monthly Timeframe Inputs
 bool showMonth = input(false, "Show Monthly Timeframe")
-color color_month = input(#ab47bc, "Monthly Line Color")
-int opacity_month = input.int(30, "Monthly Line Opacity", minval=0, maxval=100, step=1)
-int width_month = input.int(2, "Monthly Line Width", minval=1, maxval=10)
+color color_month = input(#ab47bc, "Monthly Color")
+int opacity_month = input.int(30, "Monthly Opacity", minval=0, maxval=100, step=1)
+int width_month = input.int(3, "Monthly Width", minval=1, maxval=10)
 
 // Weekly Timeframe Inputs
 bool showWeek = input(true, "Show Weekly Timeframe")
-color color_week = input(#f57f17, "Weekly Line Color")
-int opacity_week = input.int(30, "Weekly Line Opacity", minval=0, maxval=100, step=1)
-int width_week = input.int(2, "Weekly Line Width", minval=1, maxval=10)
+color color_week = input(#f57f17, "Weekly Color")
+int opacity_week = input.int(30, "Weekly Opacity", minval=0, maxval=100, step=1)
+int width_week = input.int(3, "Weekly Width", minval=1, maxval=10)
 
 // Daily Timeframe Inputs
 bool showDay = input(true, "Show Daily Timeframe")
-color color_day = input(#00a6ff, "Daily Line Color")
-int opacity_day = input.int(30, "Daily Line Opacity", minval=0, maxval=100, step=1)
-int width_day = input.int(2, "Daily Line Width", minval=1, maxval=10)
+color color_day = input(#00a6ff, "Daily Color")
+int opacity_day = input.int(30, "Daily Opacity", minval=0, maxval=100, step=1)
+int width_day = input.int(2, "Daily Width", minval=1, maxval=10)
+
+// Daily Close Timeframe Inputs
+color close_color_day = input(#0fb200, "Daily Close Color")
+int close_opacity_day = input.int(30, "Daily Close Opacity", minval=0, maxval=100, step=1)
+int close_width_day = input.int(2, "Daily Close Width", minval=1, maxval=10)
 
 bool showLabels = input(true, "Show Labels")
 
@@ -107,9 +112,9 @@ if showWeek
 
 plot((showDay and day_high >= lowPrice and day_high <= highPrice) ? day_high : na, "Previous Day High", color=color.new(color_day, opacity_day), style=plot.style_line, linewidth=width_day)
 plot((showDay and day_low >= lowPrice and day_low <= highPrice) ? day_low : na, "Previous Day Low", color=color.new(color_day, opacity_day), style=plot.style_line, linewidth=width_day)
-plot((showDay and day_close >= lowPrice and day_close <= highPrice) ? day_close : na, "Previous Day Close", color=color.new(color_day, opacity_day - 10), style=plot.style_line, linewidth=width_day - 1)
+plot((showDay and day_close >= lowPrice and day_close <= highPrice) ? day_close : na, "Previous Day Close", color=color.new(close_color_day, close_opacity_day), style=plot.style_line, linewidth=close_width_day)
 
 if showDay
-    createLabel(prevDayHighLabel, day_high, "PDH", color.new(color_day, opacity_day))
-    createLabel(prevDayLowLabel, day_low, "PDL", color.new(color_day, opacity_day))
-    createLabel(prevDayCloseLabel, day_close, "PDC", color.new(color_day, opacity_day))
+    createLabel(prevDayHighLabel, day_high, "PDH", color_day)
+    createLabel(prevDayLowLabel, day_low, "PDL", color_day)
+    createLabel(prevDayCloseLabel, day_close, "PDC", close_color_day)

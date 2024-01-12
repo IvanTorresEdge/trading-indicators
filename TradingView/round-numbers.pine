@@ -1,8 +1,9 @@
-// Script Name: Round Numbers and Quarter Levels (Dynamic)
+// @version=5
+// Script Name: Round Numbers
 // Author: Ivan Torres
-// Copyright: © 2023 Ivan Torres. All Rights Reserved.
+// Copyright: © 2024 Ivan Torres. All Rights Reserved.
 // License: MIT License
-// Description: This indicator displays round and quarter levels for the current symbol.
+// Description: This indicator renders a line every 250 pips on the chart.
 // Contact: @IvanTorresEdge
 indicator("Round and Quarter Levels (Dynamic)", shorttitle="Round and Quarter Levels", overlay=true)
 
@@ -33,7 +34,9 @@ roundToLevel(price) =>
     roundedPrice = math.round(price / levelSize) * levelSize
     roundedPrice
 
-if syminfo.type == "forex" or syminfo.type == "cfd"
+// NOTE: For now it only works with forex, cfd symbols, and the DXY
+// TODO: Add support for indices, futures, and crypto
+if syminfo.type == "forex" or syminfo.type == "cfd" or syminfo.ticker == "DXY"
     if time == chart.left_visible_bar_time
         highPrice := high
         lowPrice := low
@@ -43,7 +46,7 @@ if syminfo.type == "forex" or syminfo.type == "cfd"
         lowPrice := math.min(lowPrice, low)
 
     adjustedHigh = roundToLevel(highPrice)
-    adjustedLow = roundToLevel(lowPrice)
+    adjustedLow = roundToLevel(lowPrice) - step
 
     if not na(adjustedHigh) and not na(adjustedLow)
         numLines := math.ceil((adjustedHigh - adjustedLow) / step) + 1

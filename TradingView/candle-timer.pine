@@ -1,11 +1,11 @@
 // @version=5
 // Script Name: Candle Timer
 // Author: Ivan Torres
-// Copyright: © 2023 Ivan Torres. All Rights Reserved.
+// Copyright: © 2024 Ivan Torres. All Rights Reserved.
 // License: MIT License
-// Description: This indicator displays a table with the time remaining for the next candle to close.
+// Description: This indicator displays a table with the time remaining, the direction, for the next candle to close on the 5, 15, 1 hour and 4 hour timeframes. Allowing you to see the time remaining for the next candle to close without having to switch timeframes, and verifying if the other timeframes are in the same direction as the current timeframe.
 // Contact: @IvanTorresEdge
-indicator('Syzygy', shorttitle='Syzygy', overlay=true, precision=2, max_lines_count = 500, max_boxes_count = 500)
+indicator('Candle Timer', shorttitle='Candle Timer', overlay=true, precision=2, max_lines_count = 500, max_boxes_count = 500)
 
 // **************************************************************
 // Stop if timeframe is above 1 hour

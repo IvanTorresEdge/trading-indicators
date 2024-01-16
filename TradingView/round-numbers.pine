@@ -34,9 +34,7 @@ roundToLevel(price) =>
     roundedPrice = math.round(price / levelSize) * levelSize
     roundedPrice
 
-// NOTE: For now it only works with forex, cfd symbols, and the DXY
-// TODO: Add support for indices, futures, and crypto
-if syminfo.type == "forex" or syminfo.type == "cfd" or syminfo.ticker == "DXY"
+if syminfo.type == "forex" or syminfo.type == "cfd" or syminfo.type == "index"
     if time == chart.left_visible_bar_time
         highPrice := high
         lowPrice := low

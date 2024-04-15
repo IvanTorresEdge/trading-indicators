@@ -1,0 +1,107 @@
+//@version=5
+indicator("Highrise", overlay=true, max_boxes_count=1500)
+
+string higherTimeframe = input.timeframe("240", "Timeframe")
+
+if timeframe.in_seconds(higherTimeframe) < timeframe.in_seconds(timeframe.period)
+    runtime.error("The selected timeframe is too small. Choose a higher timeframe.")
+
+lineStyle(x) =>
+    switch x
+        'Solid'  => line.style_solid
+        'Dashed' => line.style_dashed
+        'Dotted' => line.style_dotted
+
+getTimeframeMin(tf) =>
+    switch tf
+        "1" => 1
+        "3" => 3
+        "5" => 5
+        "15" => 15
+        "30" => 30
+        "45" => 45
+        "60" => 60
+        "120" => 120
+        "180" => 180
+        "240" => 240
+        "1D" => 1440 // 1 day
+        "1W" => 10080 // 1 week
+        "1M" => 43200 // Assuming 1 month = 30 days
+        
+
+color bodyBackgroundUp = input.color(color.new(color.green, 90), "Background Color", group="Candle Appareance [Up]")
+color bodyBorderColorUp = input.color(color.new(color.green, 90), "Border Color", group="Candle Appareance [Up]")
+int bodyBorderWidthUp = input.int(1, "Border Style", [1, 2, 3, 4], group="Candle Appareance [Up]", inline="border")
+string bodyBorderStyleUp = input.string('Solid', "", ['Solid', 'Dashed', 'Dotted']  , inline='border', group='Candle Appareance [Up]') 
+
+color wickBackgroundUp = input.color(color.new(color.green, 90), "Background Color", group="Wick Appareance [Up]")
+color wickBorderColorUp = input.color(color.new(color.green, 90), "Border Color", group="Wick Appareance [Up]")
+int wickBorderWidthUp = input.int(1, "Border Style", [1, 2, 3, 4], group="Wick Appareance [Up]", inline="border")
+string wickBorderStyleUp = input.string('Solid', "", ['Solid', 'Dashed', 'Dotted']  , inline='border', group='Wick Appareance [Up]') 
+
+color bodyBackgroundDown = input.color(color.new(color.red, 90), "Background Color", group="Candle Appareance [Down]")
+color bodyBorderColorDown = input.color(color.new(color.red, 90), "Border Color", group="Candle Appareance [Down]")
+int bodyBorderWidthDown = input.int(1, "Border Style", [1, 2, 3, 4], group="Candle Appareance [Down]", inline="border")
+string bodyBorderStyleDown = input.string('Solid', "", ['Solid', 'Dashed', 'Dotted']  , inline='border', group='Candle Appareance [Down]') 
+
+color wickBackgroundDown = input.color(color.new(color.red, 90), "Background Color", group="Wick Appareance [Down]")
+color wickBorderColorDown = input.color(color.new(color.red, 90), "Border Color", group="Wick Appareance [Down]")
+int wickBorderWidthDown = input.int(1, "Border Style", [1, 2, 3, 4], group="Wick Appareance [Down]", inline="border")
+string wickBorderStyleDown = input.string('Solid', "", ['Solid', 'Dashed', 'Dotted']  , inline='border', group='Wick Appareance [Down]') 
+
+openLeft = chart.point.now(open)[1]
+highLeft = chart.point.now(high)[1]
+lowRight = chart.point.from_time(time_close, low)[1]
+closeRight = chart.point.from_time(time_close, close)[1]
+
+openPrice = request.security(syminfo.tickerid, higherTimeframe, open[0])
+closePrice = request.security(syminfo.tickerid, higherTimeframe, close[0])
+
+[bodyTopLeft, bodyBottomRight] = request.security(syminfo.tickerid, higherTimeframe, [openLeft, closeRight], lookahead = barmerge.lookahead_on)
+[wickTopLeft, wickBottomRight] = request.security(syminfo.tickerid, higherTimeframe, [highLeft, lowRight], lookahead = barmerge.lookahead_on)
+
+if timeframe.change(higherTimeframe)
+    if (openPrice < closePrice)
+        box.new(bodyTopLeft, bodyBottomRight, xloc=xloc.bar_time, bgcolor=bodyBackgroundUp, border_color=bodyBorderColorUp, border_width=bodyBorderWidthUp, border_style=lineStyle(bodyBorderStyleUp))
+        box.new(wickTopLeft, wickBottomRight, xloc=xloc.bar_time, bgcolor=wickBackgroundUp, border_color=wickBorderColorUp, border_width=wickBorderWidthUp, border_style=lineStyle(wickBorderStyleUp))
+    else
+        box.new(bodyTopLeft, bodyBottomRight, xloc=xloc.bar_time, bgcolor=bodyBackgroundDown, border_color=bodyBorderColorDown, border_width=bodyBorderWidthDown, border_style=lineStyle(bodyBorderStyleDown))
+        box.new(wickTopLeft, wickBottomRight, xloc=xloc.bar_time, bgcolor=wickBackgroundDown, border_color=wickBorderColorDown, border_width=wickBorderWidthDown, border_style=lineStyle(wickBorderStyleDown))
+
+
+// current candle
+[o, h, l, c, t] = request.security(syminfo.tickerid, higherTimeframe, [open, high, low, close, time])
+
+var box body_box = na
+var box wick_box = na
+
+if barstate.isrealtime
+    if not na(body_box) 
+        body_box.set_top(math.max(o, c))    
+        body_box.set_bottom(math.min(o, c))
+        body_box.set_left(t)
+        body_box.set_right(t + getTimeframeMin(higherTimeframe) * 60 * 1000)
+        
+        wick_box.set_top(math.max(h, l))
+        wick_box.set_bottom(math.min(h, l))
+        wick_box.set_left(t)
+        wick_box.set_right(t + getTimeframeMin(higherTimeframe) * 60 * 1000)
+
+        if o >= c
+            body_box.set_bgcolor(bodyBackgroundDown)
+            wick_box.set_bgcolor(wickBackgroundDown)
+            body_box.set_border_color(bodyBorderColorDown)
+            wick_box.set_border_color(wickBorderColorDown)
+        else
+            body_box.set_bgcolor(bodyBackgroundUp)
+            wick_box.set_bgcolor(wickBackgroundUp)
+            body_box.set_border_color(bodyBorderColorUp)
+            wick_box.set_border_color(wickBorderColorUp)
+
+    else
+        if (o >= c)
+            body_box := box.new(t, math.max(o, c), t + getTimeframeMin(higherTimeframe) * 60 * 1000, math.min(o, c), xloc=xloc.bar_time, bgcolor=bodyBackgroundDown, border_color=bodyBorderColorDown, border_width=bodyBorderWidthDown, border_style=lineStyle(bodyBorderStyleDown))
+            wick_box := box.new(t, math.max(h, l), t + getTimeframeMin(higherTimeframe) * 60 * 1000, math.min(h, l), xloc=xloc.bar_time, bgcolor=wickBackgroundDown, border_color=wickBorderColorDown, border_width=wickBorderWidthDown, border_style=lineStyle(wickBorderStyleDown))            
+        else
+            body_box := box.new(t, math.max(o, c), t + getTimeframeMin(higherTimeframe) * 60 * 1000, math.min(o, c), xloc=xloc.bar_time, bgcolor=bodyBackgroundUp, border_color=bodyBorderColorUp, border_width=bodyBorderWidthUp, border_style=lineStyle(bodyBorderStyleUp))
+            wick_box := box.new(t, math.max(h, l), t + getTimeframeMin(higherTimeframe) * 60 * 1000, math.min(h, l), xloc=xloc.bar_time, bgcolor=wickBackgroundUp, border_color=wickBorderColorUp, border_width=wickBorderWidthUp, border_style=lineStyle(wickBorderStyleUp))    

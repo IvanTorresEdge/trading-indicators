@@ -1,0 +1,157 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// 2024 © IvanTorresEdge
+
+//@version=5
+indicator("The Levels", overlay = true)
+plot(close)
+
+// ================================================================================
+// Detects Time/Price visible range
+// ================================================================================
+var float maxPrice = na
+var float minPrice = na
+
+if time == chart.left_visible_bar_time
+    maxPrice := high
+    minPrice := low
+
+if time >= chart.left_visible_bar_time and time <= chart.right_visible_bar_time
+    maxPrice := math.max(maxPrice, high)
+    minPrice := math.min(minPrice, low)
+
+
+// ================================================================================
+// Converts line style strings to actual `line` styles
+// ================================================================================
+lineStyle(x) =>
+    switch x
+        'Solid'  => line.style_solid
+        'Dashed' => line.style_dashed
+        'Dotted' => line.style_dotted
+
+// ================================================================================
+// Lines' right edge point (end)
+// ================================================================================
+// TODO: Need a better approach to calculate the right edge:
+oneMonth = 41760 * 60 * 1000
+twoMonths = oneMonth * 2
+
+oneWeek = 10080 * 60 * 1000
+twoWeeks = oneWeek * 2
+
+oneDay = 1440 * 60 * 1000
+twoDays = oneDay * 2
+
+// ================================================================================
+// Monthly Levels
+// ================================================================================
+
+color mhColor = input.color(color.purple, "High", group="Monthly", inline="mh")
+int mhWidth = input.int(2, "", [1, 2, 3, 4], group="Monthly", inline="mh")
+string mhStyle = input.string('Solid', "", ['Solid', 'Dashed', 'Dotted'], group='Monthly', inline='mh') 
+
+color mcColor = input.color(color.purple, "Close", group="Monthly", inline="mc")
+int mcWidth = input.int(2, "", [1, 2, 3, 4], group="Monthly", inline="mc")
+string mcStyle = input.string('Dashed', "", ['Solid', 'Dashed', 'Dotted'], group='Monthly', inline='mc') 
+
+color mlColor = input.color(color.purple, "Low", group="Monthly", inline="ml")
+int mlWidth = input.int(2, "", [1, 2, 3, 4], group="Monthly", inline="ml")
+string mlStyle = input.string('Solid', "", ['Solid', 'Dashed', 'Dotted'], group='Monthly', inline='ml')
+
+mHighLeft = chart.point.from_time(time, high)[1]
+mHighRight = chart.point.from_time(time + twoMonths, high)[1]
+mCloseLeft = chart.point.from_time(time, close)[1]
+mCloseRight = chart.point.from_time(time + twoMonths, close)[1]
+mLowLeft = chart.point.from_time(time, low)[1]
+mLowRight = chart.point.from_time(time + twoMonths, low)[1]
+
+[mHL, mHR, mCL, mCR, mLL, mLR] = request.security(syminfo.tickerid, "1M", [mHighLeft, mHighRight, mCloseLeft, mCloseRight, mLowLeft, mLowRight], lookahead = barmerge.lookahead_on)
+
+alertcondition(ta.cross(close, mHR.price), title="Crossing Monthly High", message="{{ticker}} price crossed the Monthly High")
+alertcondition(ta.cross(close, mCR.price), title="Crossing Monthly Close", message="{{ticker}} price crossed the Monthly Close")
+alertcondition(ta.cross(close, mLR.price), title="Crossing Monthly Low", message="{{ticker}} price crossed the Monthly Low")
+
+// ================================================================================
+// Weekly
+// ================================================================================
+
+color whColor = input.color(color.orange, "High", group="Weekly", inline="wh")
+int whWidth = input.int(2, "", [1, 2, 3, 4], group="Weekly", inline="wh")
+string whStyle = input.string('Solid', "", ['Solid', 'Dashed', 'Dotted'], group='Weekly', inline='wh') 
+
+color wcColor = input.color(color.orange, "Close", group="Weekly", inline="wc")
+int wcWidth = input.int(2, "", [1, 2, 3, 4], group="Weekly", inline="wc")
+string wcStyle = input.string('Dashed', "", ['Solid', 'Dashed', 'Dotted'], group='Weekly', inline='wc') 
+
+color wlColor = input.color(color.orange, "Low", group="Weekly", inline="wl")
+int wlWidth = input.int(2, "", [1, 2, 3, 4], group="Weekly", inline="wl")
+string wlStyle = input.string('Solid', "", ['Solid', 'Dashed', 'Dotted'], group='Weekly', inline='wl') 
+
+wHighLeft = chart.point.from_time(time, high)[1]
+wHighRight = chart.point.from_time(time + twoWeeks, high)[1]
+wCloseLeft = chart.point.from_time(time, close)[1]
+wCloseRight = chart.point.from_time(time + twoWeeks, close)[1]
+wLowLeft = chart.point.from_time(time, low)[1]
+wLowRight = chart.point.from_time(time + twoWeeks, low)[1]
+
+[wHL, wHR, wCL, wCR, wLL, wLR] = request.security(syminfo.tickerid, "1W", [wHighLeft, wHighRight, wCloseLeft, wCloseRight, wLowLeft, wLowRight], lookahead = barmerge.lookahead_on)
+
+alertcondition(ta.cross(close, wHR.price), title="Crossing Weekly High", message="{{ticker}} price crossed the Weekly High")
+alertcondition(ta.cross(close, wCR.price), title="Crossing Weekly Close", message="{{ticker}} price crossed the Weekly Close")
+alertcondition(ta.cross(close, wLR.price), title="Crossing Weekly Low", message="{{ticker}} price crossed the Weekly Low")
+
+// ================================================================================
+// Daily
+// ================================================================================
+
+color dhColor = input.color(color.blue, "High", group="Daily", inline="dh")
+int dhWidth = input.int(2, "", [1, 2, 3, 4], group="Daily", inline="dh")
+string dhStyle = input.string('Solid', "", ['Solid', 'Dashed', 'Dotted'], group='Daily', inline='dh') 
+
+color dcColor = input.color(color.green, "Close", group="Daily", inline="dc")
+int dcWidth = input.int(2, "", [1, 2, 3, 4], group="Daily", inline="dc")
+string dcStyle = input.string('Dashed', "", ['Solid', 'Dashed', 'Dotted'], group='Daily', inline='dc') 
+
+color dlColor = input.color(color.blue, "Low", group="Daily", inline="dl")
+int dlWidth = input.int(2, "", [1, 2, 3, 4], group="Daily", inline="dl")
+string dlStyle = input.string('Solid', "", ['Solid', 'Dashed', 'Dotted'], group='Daily', inline='dl') 
+
+dHighLeft = chart.point.from_time(time, high)[1]
+dHighRight = chart.point.from_time(time + oneWeek, high)[1]
+dCloseLeft = chart.point.from_time(time, close)[1]
+dCloseRight = chart.point.from_time(time + oneWeek, close)[1]
+dLowLeft = chart.point.from_time(time, low)[1]
+dLowRight = chart.point.from_time(time + oneWeek, low)[1]
+
+[dHL, dHR, dCL, dCR, dLL, dLR] = request.security(syminfo.tickerid, "1D", [dHighLeft, dHighRight, dCloseLeft, dCloseRight, dLowLeft, dLowRight], lookahead = barmerge.lookahead_on)
+
+alertcondition(ta.cross(close, dHR.price), title="Crossing Daily High", message="{{ticker}} price crossed the Daily High")
+alertcondition(ta.cross(close, dCR.price), title="Crossing Daily Close", message="{{ticker}} price crossed the Daily Close")
+alertcondition(ta.cross(close, dLR.price), title="Crossing Daily Low", message="{{ticker}} price crossed the Daily Low")
+
+// ================================================================================
+// Render Levels
+// ================================================================================
+// Render only confirmed (historic) levels that are visible in the time/price range:
+// Previous Month, Previoys Week, and Previus Daily Levels.
+if barstate.ishistory
+    if mHL.price >= minPrice and mHL.price <= maxPrice
+        line.new(mHL, mHR, xloc=xloc.bar_time, width=mhWidth, color=mhColor, style=lineStyle(mhStyle))
+    if mCL.price >= minPrice and mCL.price <= maxPrice
+        line.new(mCL, mCR, xloc=xloc.bar_time, width=mcWidth, color=mcColor, style=lineStyle(mcStyle))
+    if mLL.price >= minPrice and mLL.price <= maxPrice
+        line.new(mLL, mLR, xloc=xloc.bar_time, width=mlWidth, color=mlColor, style=lineStyle(mlStyle))
+
+    if wHL.price >= minPrice and wHL.price <= maxPrice
+        line.new(wHL, wHR, xloc=xloc.bar_time, width=whWidth, color=whColor, style=lineStyle(whStyle))
+    if wCL.price >= minPrice and wCL.price <= maxPrice
+        line.new(wCL, wCR, xloc=xloc.bar_time, width=wcWidth, color=wcColor, style=lineStyle(wcStyle))
+    if wLL.price >= minPrice and wLL.price <= maxPrice
+        line.new(wLL, wLR, xloc=xloc.bar_time, width=wlWidth, color=wlColor, style=lineStyle(wlStyle))
+
+    if dHL.price >= minPrice and dHL.price <= maxPrice
+        line.new(dHL, dHR, xloc=xloc.bar_time, width=dhWidth, color=dhColor, style=lineStyle(dhStyle))
+    if dCL.price >= minPrice and dCL.price <= maxPrice
+        line.new(dCL, dCR, xloc=xloc.bar_time, width=dcWidth, color=dcColor, style=lineStyle(dcStyle))
+    if dLL.price >= minPrice and dLL.price <= maxPrice
+        line.new(dLL, dLR, xloc=xloc.bar_time, width=dlWidth, color=dlColor, style=lineStyle(dlStyle))
